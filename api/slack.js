@@ -156,8 +156,8 @@ router.post('/slash', (req, res) => {
         };
 
         const rawPlayerTags = payload.split(' ').filter(v => !!v);
-        const invalidUsernameFound = !rawPlayerTags.every(v => /<@\w+>/.test(v));
-        const players = rawPlayerTags.map(p => p.replace(/[<@>]/, ''));
+        const invalidUsernameFound = !rawPlayerTags.every(v => /<@[\w|]+>/.test(v));
+        const players = rawPlayerTags.map(p => p.replaceAll(/[<@>]/, '').split('|')[0]);
 
         console.log(`Handling keyword ${keyword}...`);
         switch (keyword) {
