@@ -67,7 +67,6 @@ router.post('/slash', (req, res) => {
     case 'mafiascummod':
     default:
       console.log('Handling /mafiascummod...');
-      console.log(req.body.text);
 
       if (text === 'help') {
         res.send(Object.keys(SLASH_COMMANDS).map(buildCommandHelp).join('\n'));
@@ -83,6 +82,7 @@ router.post('/slash', (req, res) => {
       }
 
       const value = text.substring(endOfKeywordIndex + 1);
+      console.log(keyword, value);
       if (/^help[^A-Za-z]/.test(value)) {
         res.send(buildCommandHelp(keyword));
         return;
