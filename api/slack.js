@@ -171,7 +171,7 @@ router.post('/slash', (req, res) => {
 
         const votee = parseUserId(payload);
 
-        const isInitialTally = game.currentDay.dayId === 1 && game.currentDay.currentTally.votes.length === 0;
+        const isInitialTally = day => day.dayId === 1 && day.currentTally.votes.length === 0;
         const majorityVote = n => (n % 2 === 0 ? n / 2 + 1 : Math.ceil(n / 2));
         const lynchThresholdMessage = n => `With ${n} alive, it takes ${majorityVote(n)} to lynch.`;
         const renderPlayerList = playerList => playerList.map(player => `<@${player}>`).join(', ');
@@ -398,7 +398,7 @@ Voting is now closed
               text: `
 Day ${game.currentDay.dayId}
 ${
-                isInitialTally
+                isInitialTally(game.currentDay)
                   ? `*Alive:*
 ${renderPlayerList(game.currentDay.players)}
 `
