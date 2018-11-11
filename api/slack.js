@@ -155,12 +155,13 @@ router.post('/slash', (req, res) => {
           });
         };
 
-        const players = payload.split(' ').filter(v => !!v);
+        const rawPlayerTags = payload.split(' ').filter(v => !!v);
+        const players = rawPlayerTags.map(p => p.replace(/[<@>]/, ''));
 
         console.log(`Handling keyword ${keyword}...`);
         switch (keyword) {
           case 'begin':
-            if (!players.every(v => /<@\w+>/.test(v))) {
+            if (!rawPlayerTags.every(v => /<@\w+>/.test(v))) {
               console.log('Invalid username found');
               respond({
                 response_type: 'ephemeral',
@@ -210,7 +211,7 @@ router.post('/slash', (req, res) => {
                 text: `Day ${game.currentDay.dayId}
 
 Players:
-${players.map((player, index) => `${index + 1}. ${player}\n`)}
+${players.map((player, index) => `${index + 1}. <@${player}>\n`)}
 `,
               });
             });
@@ -219,6 +220,7 @@ ${players.map((player, index) => `${index + 1}. ${player}\n`)}
           case 'vote':
             // if voting is closed, error
             // else capture vote
+            // auto-end day on majority vote?
             break;
           case 'tally':
             // else show tally
