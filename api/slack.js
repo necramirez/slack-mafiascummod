@@ -29,7 +29,7 @@ router.post('/event', (req, res) => {
   }
 });
 
-const SLASH_COMMANDS = {
+const KEYWORDS = {
   setup: {
     short: 'Create a game in the current channel with you as moderator (a.k.a. mod)',
     usage: 'setup',
@@ -63,8 +63,8 @@ router.post('/slash', (req, res) => {
     body: { channel_id: channelId, command, response_url: responseUrl, text: rawText, user_id: userId },
   } = req;
   const buildCommandHelp = cmd => {
-    const example = SLASH_COMMANDS[cmd].example ? ` Example: \`/${command} ${SLASH_COMMANDS[cmd].example}\`` : '';
-    return `\`${SLASH_COMMANDS[cmd].usage}\` - ${SLASH_COMMANDS[cmd].short}.${example}`;
+    const example = KEYWORDS[cmd].example ? ` Example: \`/${command} ${KEYWORDS[cmd].example}\`` : '';
+    return `\`${KEYWORDS[cmd].usage}\` - ${KEYWORDS[cmd].short}.${example}`;
   };
 
   const text = rawText.trim();
@@ -73,15 +73,15 @@ router.post('/slash', (req, res) => {
 
   if (!text || text === 'help') {
     res.send(
-      Object.keys(SLASH_COMMANDS)
+      Object.keys(KEYWORDS)
         .map(buildCommandHelp)
         .join('\n'),
     );
     return;
   }
 
-  if (!SLASH_COMMANDS[keyword]) {
-    res.send(`Invalid command "${keyword}"`);
+  if (!KEYWORDS[keyword]) {
+    res.send(`Invalid keyword "${keyword}"`);
     return;
   }
 
@@ -100,9 +100,9 @@ router.post('/slash', (req, res) => {
     });
 
   switch (command) {
-    case 'mafiascummod':
+    case '/mafiascummod':
     default:
-      console.log(`Handling /${command}...`);
+      console.log(`Handling ${command}...`);
       res.send('Please wait a moment...');
 
       // get ongoing game
@@ -118,8 +118,8 @@ router.post('/slash', (req, res) => {
 
         // if there is no ongoing game
         if (!game) {
-          // if command == setup, create game
-          if (command === SLASH_COMMANDS.setup) {
+          // if keyword == setup, create game
+          if (keyword === KEYWORDS.setup) {
             Game.create({ channelId, modUserId: userId }, gameErr => {
               if (gameErr) {
                 console.log('Error creating game');
@@ -154,8 +154,8 @@ router.post('/slash', (req, res) => {
 
         const players = payload.split(' ').filter(v => !!v);
 
-        switch (command) {
-          case SLASH_COMMANDS.begin:
+        switch (keyword) {
+          case KEYWORDS.begin:
             if (!players.every(v => /<@\w+>/.test(v))) {
               respond({
                 response_type: 'ephemeral',
@@ -193,14 +193,14 @@ router.post('/slash', (req, res) => {
               /* eslint-enable */
             }
             break;
-          case SLASH_COMMANDS.vote:
+          case KEYWORDS.vote:
             // if voting is closed, error
             // else capture vote
             break;
-          case SLASH_COMMANDS.tally:
+          case KEYWORDS.tally:
             // else show tally
             break;
-          case SLASH_COMMANDS.end:
+          case KEYWORDS.end:
             if (game.currentDay === null || game.currentDay.votingClosed) {
               respond({
                 response_type: 'ephemeral',
@@ -216,7 +216,7 @@ router.post('/slash', (req, res) => {
             // eslint-disable-next-line no-param-reassign
             game.save();
             break;
-          case SLASH_COMMANDS.teardown:
+          case KEYWORDS.teardown:
             // if you are not the mod, error
             if (notMod) {
               notModResponse();
