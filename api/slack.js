@@ -44,6 +44,10 @@ const SLASH_COMMANDS = {
     usage: 'vote <player>',
     example: 'vote @username1',
   },
+  tally: {
+    short: 'Show current vote tally',
+    usage: 'tally',
+  },
   end: {
     short: '(mod only) Force the current "day" to end, even if there is no majority vote yet',
     usage: 'end',
@@ -56,7 +60,7 @@ const SLASH_COMMANDS = {
 
 router.post('/slash', (req, res) => {
   const {
-    body: { channel_id: channelId, command, response_url: responseUrl, text = 'help', token, user_id: userId },
+    body: { channel_id: channelId, command, response_url: responseUrl, text = 'help', user_id: userId },
   } = req;
   const buildCommandHelp = cmd => {
     const example = SLASH_COMMANDS[cmd].example ? ` Example: \`/${command} ${SLASH_COMMANDS[cmd].example}\`` : '';
@@ -80,35 +84,151 @@ router.post('/slash', (req, res) => {
     return;
   }
 
-  const value = endOfKeywordIndex > -1 ? text.substring(endOfKeywordIndex + 1) : '';
-  if (/^help\b/.test(value)) {
+  const payload = endOfKeywordIndex > -1 ? text.substring(endOfKeywordIndex + 1) : '';
+  if (/^help\b/.test(payload)) {
     res.send(buildCommandHelp(keyword));
     return;
   }
 
+  const respond = body =>
+    request({
+      method: 'POST',
+      uri: responseUrl,
+      body,
+      json: true,
+    });
+
   switch (command) {
     case 'mafiascummod':
     default:
-      console.log('Handling /mafiascummod...');
+      console.log(`Handling /${command}...`);
+      res.send('Please wait a moment...');
 
-      res.sendStatus(200);
-
-      Game.findOne({ channelId, modUserId: userId, workspaceToken: token }, err => {
+      // get ongoing game
+      Game.findOne({ channelId, endedAt: { $eq: null } }, (err, game) => {
         if (err) {
           console.log('Error loading game');
-          res.sendStatus(400).send('Error loading game');
+          respond({
+            response_type: 'ephemeral',
+            text: 'Error loading game',
+          });
           return;
         }
 
-        request({
-          method: 'POST',
-          uri: responseUrl,
-          body: {
-            response_type: 'in_channel',
-            text: 'OK',
-          },
-          json: true,
-        });
+        // if there is no ongoing game
+        if (!game) {
+          // if command == setup, create game
+          if (command === SLASH_COMMANDS.setup) {
+            Game.create({ channelId, modUserId: userId }, gameErr => {
+              if (gameErr) {
+                console.log('Error creating game');
+                respond({
+                  response_type: 'ephemeral',
+                  text: 'Error creating game',
+                });
+                return;
+              }
+
+              respond({
+                response_type: 'ephemeral',
+                text: 'Game created - You are now mod',
+              });
+            });
+          } else {
+            respond({
+              response_type: 'ephemeral',
+              text: 'There is no ongoing game',
+            });
+            return;
+          }
+        }
+
+        const notMod = game.modUserId !== userId;
+        const notModResponse = () => {
+          respond({
+            response_type: 'ephemeral',
+            text: 'You cannot do that - You are not the mod',
+          });
+        };
+
+        const players = payload.split(' ').filter(v => !!v);
+
+        switch (command) {
+          case SLASH_COMMANDS.begin:
+            if (!players.every(v => /<@\w+>/.test(v))) {
+              respond({
+                response_type: 'ephemeral',
+                text: 'Invalid username found',
+              });
+              return;
+            }
+            if (game.currentDay && game.currentDay.votingClosed === false) {
+              respond({
+                response_type: 'ephemeral',
+                text: `Current day has not yet ended`,
+              });
+              return;
+            }
+
+            // if you are not the mod, error
+            if (notMod) {
+              notModResponse();
+              return;
+            }
+            // else begin day
+            if (game.currentDay === null) {
+              /* eslint-disable no-param-reassign */
+              game.currentDay = {
+                dayId: 1,
+                players,
+                currentTally: {
+                  votes: [],
+                  notVoting: players,
+                },
+                votingClosed: false,
+              };
+              game.startedAt = new Date().toISOString();
+              game.save();
+              /* eslint-enable */
+            }
+            break;
+          case SLASH_COMMANDS.vote:
+            // if voting is closed, error
+            // else capture vote
+            break;
+          case SLASH_COMMANDS.tally:
+            // else show tally
+            break;
+          case SLASH_COMMANDS.end:
+            if (game.currentDay === null || game.currentDay.votingClosed) {
+              respond({
+                response_type: 'ephemeral',
+                text: `Day has not yet begun`,
+              });
+              return;
+            }
+            // if you are not the mod, error
+            if (notMod) {
+              notModResponse();
+            }
+            // else end day
+            // eslint-disable-next-line no-param-reassign
+            game.save();
+            break;
+          case SLASH_COMMANDS.teardown:
+            // if you are not the mod, error
+            if (notMod) {
+              notModResponse();
+              return;
+            }
+            // else end game
+            // eslint-disable-next-line no-param-reassign
+            game.endedAt = new Date();
+            game.save();
+            break;
+          default:
+          // noop - invalid keyword already handled above
+        }
       });
   }
 });

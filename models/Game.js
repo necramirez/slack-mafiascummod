@@ -1,20 +1,44 @@
 const { connection: db, Schema } = require('../services/mongoose');
 
 const TallyEntry = new Schema({
-  votee: String,
-  voters: [String],
+  votee: {
+    type: String,
+    required: true,
+  },
+  voters: {
+    type: [String],
+    default: [],
+  },
 });
 
 const Tally = new Schema({
-  votes: [TallyEntry],
-  notVoting: [String],
+  votes: {
+    type: [TallyEntry],
+    default: [],
+  },
+  notVoting: {
+    type: [String],
+    default: [],
+  },
 });
 
 const Day = new Schema({
-  dayId: Number,
-  players: [String],
-  currentTally: Tally,
-  votingClosed: Boolean,
+  dayId: {
+    type: Number,
+    required: true,
+  },
+  players: {
+    type: [String],
+    default: [],
+  },
+  currentTally: {
+    type: Tally,
+    default: null,
+  },
+  votingClosed: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const GameSchema = new Schema(
@@ -27,10 +51,22 @@ const GameSchema = new Schema(
       type: String,
       required: true,
     },
-    currentDay: Day,
-    startedAt: Date,
-    endedAt: Date,
-    lastTallyRequestedAt: Date,
+    currentDay: {
+      type: Day,
+      default: null,
+    },
+    startedAt: {
+      type: Date,
+      default: null,
+    },
+    endedAt: {
+      type: Date,
+      default: null,
+    },
+    lastTallyRequestedAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,
