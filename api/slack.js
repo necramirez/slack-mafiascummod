@@ -103,7 +103,7 @@ router.post('/slash', (req, res) => {
     case '/mafiascummod':
     default:
       console.log(`Handling ${command} with keyword ${keyword}...`);
-      res.send('Please wait a moment...');
+      res.send(`Processing your request \`${rawText}\`...`);
 
       // get ongoing game
       Game.findOne({ channelId, endedAt: { $eq: null } }, (err, game) => {
