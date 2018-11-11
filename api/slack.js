@@ -63,34 +63,37 @@ router.post('/slash', (req, res) => {
     return `\`${SLASH_COMMANDS[cmd].usage}\` - ${SLASH_COMMANDS[cmd].short}.${example}`;
   };
 
+  if (text === 'help') {
+    res.send(
+      Object.keys(SLASH_COMMANDS)
+        .map(buildCommandHelp)
+        .join('\n'),
+    );
+    return;
+  }
+
+  const endOfKeywordIndex = text.indexOf(' ');
+
+  const keyword = text.substring(0, endOfKeywordIndex);
+  if (!SLASH_COMMANDS[keyword]) {
+    res.send('Invalid command');
+    return;
+  }
+
+  const value = text.substring(endOfKeywordIndex + 1);
+  if (/^help\\b*/.test(value)) {
+    res.send(buildCommandHelp(keyword));
+    return;
+  }
+
   switch (command) {
     case 'mafiascummod':
     default:
       console.log('Handling /mafiascummod...');
 
-      if (text === 'help') {
-        res.send(Object.keys(SLASH_COMMANDS).map(buildCommandHelp).join('\n'));
-        return;
-      }
-
-      const endOfKeywordIndex = text.indexOf(' ');
-
-      const keyword = text.substring(0, endOfKeywordIndex);
-      if (!SLASH_COMMANDS[keyword]) {
-        res.send('Invalid command');
-        return;
-      }
-
-      const value = text.substring(endOfKeywordIndex + 1);
-      console.log(keyword, value);
-      if (/^help[^A-Za-z]/.test(value)) {
-        res.send(buildCommandHelp(keyword));
-        return;
-      }
-
       res.sendStatus(200);
 
-      Game.findOne({ channelId, modUserId: userId, workspaceToken: token }, (err, game) => {
+      Game.findOne({ channelId, modUserId: userId, workspaceToken: token }, err => {
         if (err) {
           console.log('Error loading game');
           res.sendStatus(400).send('Error loading game');
