@@ -19,10 +19,6 @@ const Day = new Schema({
 
 const GameSchema = new Schema(
   {
-    workspaceToken: {
-      type: String,
-      required: true,
-    },
     channelId: {
       type: String,
       required: true,
