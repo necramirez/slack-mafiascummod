@@ -120,6 +120,7 @@ router.post('/slash', (req, res) => {
         if (!game) {
           // if keyword == 'setup', create game
           if (keyword === 'setup') {
+            console.log('Creating game...');
             Game.create({ channelId, modUserId: userId }, gameErr => {
               if (gameErr) {
                 console.log('Error creating game');
@@ -135,13 +136,13 @@ router.post('/slash', (req, res) => {
                 text: 'Game created - You are now mod',
               });
             });
-          } else {
-            respond({
-              response_type: 'ephemeral',
-              text: 'There is no ongoing game',
-            });
             return;
           }
+          respond({
+            response_type: 'ephemeral',
+            text: 'There is no ongoing game',
+          });
+          return;
         }
 
         const notMod = game.modUserId !== userId;
