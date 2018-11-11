@@ -74,13 +74,13 @@ router.post('/slash', (req, res) => {
 
   const endOfKeywordIndex = text.indexOf(' ');
 
-  const keyword = text.substring(0, endOfKeywordIndex);
+  const keyword = endOfKeywordIndex > -1 ? text.substring(0, endOfKeywordIndex) : text;
   if (!SLASH_COMMANDS[keyword]) {
     res.send(`Invalid command "${keyword}"`);
     return;
   }
 
-  const value = text.substring(endOfKeywordIndex + 1);
+  const value = endOfKeywordIndex > -1 ? text.substring(endOfKeywordIndex + 1) : '';
   if (/^help\b/.test(value)) {
     res.send(buildCommandHelp(keyword));
     return;
