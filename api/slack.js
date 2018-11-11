@@ -60,14 +60,18 @@ const SLASH_COMMANDS = {
 
 router.post('/slash', (req, res) => {
   const {
-    body: { channel_id: channelId, command, response_url: responseUrl, text = 'help', user_id: userId },
+    body: { channel_id: channelId, command, response_url: responseUrl, text: rawText, user_id: userId },
   } = req;
   const buildCommandHelp = cmd => {
     const example = SLASH_COMMANDS[cmd].example ? ` Example: \`/${command} ${SLASH_COMMANDS[cmd].example}\`` : '';
     return `\`${SLASH_COMMANDS[cmd].usage}\` - ${SLASH_COMMANDS[cmd].short}.${example}`;
   };
 
-  if (text === 'help') {
+  const text = rawText.trim();
+  const endOfKeywordIndex = text.indexOf(' ');
+  const keyword = endOfKeywordIndex > -1 ? text.substring(0, endOfKeywordIndex) : text;
+
+  if (!text || text === 'help') {
     res.send(
       Object.keys(SLASH_COMMANDS)
         .map(buildCommandHelp)
@@ -76,9 +80,6 @@ router.post('/slash', (req, res) => {
     return;
   }
 
-  const endOfKeywordIndex = text.indexOf(' ');
-
-  const keyword = endOfKeywordIndex > -1 ? text.substring(0, endOfKeywordIndex) : text;
   if (!SLASH_COMMANDS[keyword]) {
     res.send(`Invalid command "${keyword}"`);
     return;
