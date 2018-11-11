@@ -52,6 +52,11 @@ const KEYWORDS = {
     short: 'Show current vote tally',
     usage: 'tally',
   },
+  endWithDraw: {
+    short:
+      '(mod only) Force the current "day" to end on draw, like when there is no possibility of reaching a majority vote anymore',
+    usage: 'endWithDraw',
+  },
   forceDayEnd: {
     short: '(mod only) Force the current "day" to end, even if there is no majority vote yet',
     usage: 'forceDayEnd',
@@ -404,9 +409,9 @@ _${lynchThresholdMessage(game.currentDay.players.length)}_
 `,
             });
             break;
-          case 'forceDayEnd':
+          case 'endWithDraw':
             if (game.currentDay === null || game.currentDay.votingClosed) {
-              console.log('Cannot end the day - Day has not yet begun');
+              console.log('Cannot end the day with a draw - Day has not yet begun');
               respond({
                 response_type: 'ephemeral',
                 text: `Day has not yet begun`,
@@ -416,6 +421,46 @@ _${lynchThresholdMessage(game.currentDay.players.length)}_
             // if you are not the mod, error
             if (notMod) {
               notModResponse();
+              return;
+            }
+            // else end day
+            console.log('Ending the day with a draw...');
+            console.log(`Current day is Day ${game.currentDay.dayId}`);
+            /* eslint-disable no-param-reassign */
+            game.currentDay.votingClosed = true;
+            game.save(saveErr => {
+              if (saveErr) {
+                console.log('Error ending the day with a draw');
+                respond({
+                  response_type: 'ephemeral',
+                  text: 'Error ending the day with a draw',
+                });
+                return;
+              }
+              respond({
+                response_type: 'in_channel',
+                text: `
+Day ${game.currentDay.dayId} has ended with a draw
+
+Voting is now closed
+`,
+              });
+            });
+            /* eslint-enable */
+            break;
+          case 'forceDayEnd':
+            if (game.currentDay === null || game.currentDay.votingClosed) {
+              console.log('Cannot force end the day - Day has not yet begun');
+              respond({
+                response_type: 'ephemeral',
+                text: `Day has not yet begun`,
+              });
+              return;
+            }
+            // if you are not the mod, error
+            if (notMod) {
+              notModResponse();
+              return;
             }
             // else end day
             console.log('Ending the day...');
@@ -424,10 +469,10 @@ _${lynchThresholdMessage(game.currentDay.players.length)}_
             game.currentDay.votingClosed = true;
             game.save(saveErr => {
               if (saveErr) {
-                console.log('Error ending the day');
+                console.log('Error force ending the day');
                 respond({
                   response_type: 'ephemeral',
-                  text: 'Error ending the day',
+                  text: 'Error force ending the day',
                 });
                 return;
               }
