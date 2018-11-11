@@ -214,7 +214,7 @@ router.post('/slash', (req, res) => {
                 text: `Day ${game.currentDay.dayId}
 
 Players:
-${players.map((player, index) => `${index + 1}. <@${player}>\n`)}
+${players.map((player, index) => `${index + 1}. <@${player}>`).join('\n')}
 `,
               });
             });
