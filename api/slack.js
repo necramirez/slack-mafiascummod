@@ -81,7 +81,7 @@ router.post('/slash', (req, res) => {
   }
 
   const value = text.substring(endOfKeywordIndex + 1);
-  if (/^help\\b*/.test(value)) {
+  if (/^help\b/.test(value)) {
     res.send(buildCommandHelp(keyword));
     return;
   }
