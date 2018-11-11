@@ -120,6 +120,7 @@ router.post('/slash', (req, res) => {
         if (!game) {
           // if keyword == 'setup', create game
           if (keyword === 'setup') {
+            console.log(`Handling keyword ${keyword}...`);
             console.log('Creating game...');
             Game.create({ channelId, modUserId: userId }, gameErr => {
               if (gameErr) {
@@ -147,6 +148,7 @@ router.post('/slash', (req, res) => {
 
         const notMod = game.modUserId !== userId;
         const notModResponse = () => {
+          console.log('Not the mod');
           respond({
             response_type: 'ephemeral',
             text: 'You cannot do that - You are not the mod',
@@ -155,9 +157,11 @@ router.post('/slash', (req, res) => {
 
         const players = payload.split(' ').filter(v => !!v);
 
+        console.log(`Handling keyword ${keyword}...`);
         switch (keyword) {
           case 'begin':
             if (!players.every(v => /<@\w+>/.test(v))) {
+              console.log('Invalid username found');
               respond({
                 response_type: 'ephemeral',
                 text: 'Invalid username found',
@@ -165,9 +169,10 @@ router.post('/slash', (req, res) => {
               return;
             }
             if (game.currentDay && game.currentDay.votingClosed === false) {
+              console.log('Current day has not yet ended');
               respond({
                 response_type: 'ephemeral',
-                text: `Current day has not yet ended`,
+                text: 'Current day has not yet ended',
               });
               return;
             }
@@ -178,21 +183,38 @@ router.post('/slash', (req, res) => {
               return;
             }
             // else begin day
-            if (game.currentDay === null) {
-              /* eslint-disable no-param-reassign */
-              game.currentDay = {
-                dayId: 1,
-                players,
-                currentTally: {
-                  votes: [],
-                  notVoting: players,
-                },
-                votingClosed: false,
-              };
-              game.startedAt = new Date().toISOString();
-              game.save();
-              /* eslint-enable */
-            }
+            console.log('Beginning the day...');
+            console.log(`Current day is Day ${game.currentDay ? game.currentDay.dayId : 0}`);
+            /* eslint-disable no-param-reassign */
+            game.currentDay = {
+              dayId: (game.currentDay ? game.currentDay.dayId : 0) + 1,
+              players,
+              currentTally: {
+                votes: [],
+                notVoting: players,
+              },
+              votingClosed: false,
+            };
+            game.startedAt = new Date().toISOString();
+            game.save(saveErr => {
+              if (saveErr) {
+                console.log('Error beginning the day');
+                respond({
+                  response_type: 'ephemeral',
+                  text: 'Error beginning the day',
+                });
+                return;
+              }
+              respond({
+                response_type: 'in_channel',
+                text: `Day ${game.currentDay.dayId}
+
+Players:
+${players.map((player, index) => `${index + 1}. ${player}\n`)}
+`,
+              });
+            });
+            /* eslint-enable */
             break;
           case 'vote':
             // if voting is closed, error
@@ -203,6 +225,7 @@ router.post('/slash', (req, res) => {
             break;
           case 'end':
             if (game.currentDay === null || game.currentDay.votingClosed) {
+              console.log('Cannot end the day - Day has not yet begun');
               respond({
                 response_type: 'ephemeral',
                 text: `Day has not yet begun`,
@@ -214,8 +237,29 @@ router.post('/slash', (req, res) => {
               notModResponse();
             }
             // else end day
-            // eslint-disable-next-line no-param-reassign
-            game.save();
+            console.log('Ending the day...');
+            console.log(`Current day is Day ${game.currentDay.dayId}`);
+            /* eslint-disable no-param-reassign */
+            game.currentDay.votingClosed = true;
+            game.save(saveErr => {
+              if (saveErr) {
+                console.log('Error ending the day');
+                respond({
+                  response_type: 'ephemeral',
+                  text: 'Error ending the day',
+                });
+                return;
+              }
+              respond({
+                response_type: 'in_channel',
+                text: `
+Day ${game.currentDay.dayId} has been forcefully ended by the mod
+
+Voting is closed
+`,
+              });
+            });
+            /* eslint-enable */
             break;
           case 'teardown':
             // if you are not the mod, error
@@ -224,12 +268,28 @@ router.post('/slash', (req, res) => {
               return;
             }
             // else end game
-            // eslint-disable-next-line no-param-reassign
+            console.log('Ending the game...');
+            /* eslint-disable no-param-reassign */
             game.endedAt = new Date();
-            game.save();
+            game.save(saveErr => {
+              if (saveErr) {
+                console.log('Error ending the game');
+                respond({
+                  response_type: 'ephemeral',
+                  text: 'Error ending the game',
+                });
+                return;
+              }
+              respond({
+                response_type: 'ephemeral',
+                text: 'Game has ended',
+              });
+            });
+            /* eslint-enable */
             break;
           default:
-          // noop - invalid keyword already handled above
+            // noop - invalid keyword already handled above
+            break;
         }
       });
   }
