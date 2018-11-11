@@ -118,8 +118,8 @@ router.post('/slash', (req, res) => {
 
         // if there is no ongoing game
         if (!game) {
-          // if keyword == setup, create game
-          if (keyword === KEYWORDS.setup) {
+          // if keyword == 'setup', create game
+          if (keyword === 'setup') {
             Game.create({ channelId, modUserId: userId }, gameErr => {
               if (gameErr) {
                 console.log('Error creating game');
@@ -155,7 +155,7 @@ router.post('/slash', (req, res) => {
         const players = payload.split(' ').filter(v => !!v);
 
         switch (keyword) {
-          case KEYWORDS.begin:
+          case 'begin':
             if (!players.every(v => /<@\w+>/.test(v))) {
               respond({
                 response_type: 'ephemeral',
@@ -193,14 +193,14 @@ router.post('/slash', (req, res) => {
               /* eslint-enable */
             }
             break;
-          case KEYWORDS.vote:
+          case 'vote':
             // if voting is closed, error
             // else capture vote
             break;
-          case KEYWORDS.tally:
+          case 'tally':
             // else show tally
             break;
-          case KEYWORDS.end:
+          case 'end':
             if (game.currentDay === null || game.currentDay.votingClosed) {
               respond({
                 response_type: 'ephemeral',
@@ -216,7 +216,7 @@ router.post('/slash', (req, res) => {
             // eslint-disable-next-line no-param-reassign
             game.save();
             break;
-          case KEYWORDS.teardown:
+          case 'teardown':
             // if you are not the mod, error
             if (notMod) {
               notModResponse();
