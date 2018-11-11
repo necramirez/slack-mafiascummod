@@ -72,7 +72,7 @@ router.post('/slash', (req, res) => {
     body: { channel_id: channelId, command, response_url: responseUrl, text: rawText, user_id: userId },
   } = req;
   const buildCommandHelp = cmd => {
-    const example = KEYWORDS[cmd].example ? ` Example: \`/${command} ${KEYWORDS[cmd].example}\`` : '';
+    const example = KEYWORDS[cmd].example ? ` Example: \`${command} ${KEYWORDS[cmd].example}\`` : '';
     return `\`${KEYWORDS[cmd].usage}\` - ${KEYWORDS[cmd].short}.${example}`;
   };
 
