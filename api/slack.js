@@ -233,7 +233,60 @@ ${players.map((player, index) => `${index + 1}. <@${player}>`).join('\n')}
             break;
           case 'vote':
             // if voting is closed, error
+            if (game.currentDay === null || game.currentDay.votingClosed) {
+              console.log('Cannot vote yet - Day has not yet begun');
+              respond({
+                response_type: 'ephemeral',
+                text: `Day has not yet begun`,
+              });
+              return;
+            }
+            // if votee is not in player list, error
+            if (!game.currentDay.players.include(payload)) {
+              console.log('You can only vote for players still part of the game');
+              respond({
+                response_type: 'ephemeral',
+                text: 'You can only vote for players still part of the game',
+              });
+              return;
+            }
             // else capture vote
+            // auto-end day on majority vote?
+            console.log('Capturing vote...');
+            console.log(`Current day is Day ${game.currentDay.dayId}`);
+            /* eslint-disable no-param-reassign */
+            // votee has no votes yet
+            if (!game.currentDay.currentTally.votes.some(vote => vote.votee === payload)) {
+              game.currentDay.currentTally.votes.push({
+                votee: payload,
+                voters: [userId],
+              });
+            } else {
+              game.currentDay.currentTally.votes = game.currentDay.currentTally.votes.map(
+                vote =>
+                  vote.votee === payload
+                    ? {
+                        votee: payload,
+                        voters: vote.voters.concat([userId]),
+                      }
+                    : vote,
+              );
+            }
+            game.save(saveErr => {
+              if (saveErr) {
+                console.log('Error capturing vote');
+                respond({
+                  response_type: 'ephemeral',
+                  text: 'Error capturing vote',
+                });
+                return;
+              }
+              respond({
+                response_type: 'ephemeral',
+                text: 'Your vote has been counted',
+              });
+            });
+            /* eslint-enable */
             // auto-end day on majority vote?
             break;
           case 'tally':
