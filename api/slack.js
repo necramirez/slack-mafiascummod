@@ -76,7 +76,7 @@ router.post('/slash', (req, res) => {
 
   const keyword = text.substring(0, endOfKeywordIndex);
   if (!SLASH_COMMANDS[keyword]) {
-    res.send('Invalid command');
+    res.send(`Invalid command "${keyword}"`);
     return;
   }
 
