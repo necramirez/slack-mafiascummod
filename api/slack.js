@@ -255,6 +255,15 @@ ${players.map((player, index) => `${index + 1}. <@${player}>`).join('\n')}
               });
               return;
             }
+            // if voter already voted, error
+            if (!game.currentDay.currentTally.notVoting.includes(userId)) {
+              console.log('You already voted - You must unvote first');
+              respond({
+                response_type: 'ephemeral',
+                text: 'You already voted - You must unvote first',
+              });
+              return;
+            }
             // else capture vote
             // auto-end day on majority vote?
             console.log('Capturing vote...');
@@ -277,6 +286,7 @@ ${players.map((player, index) => `${index + 1}. <@${player}>`).join('\n')}
                     : vote,
               );
             }
+            game.currentDay.currentTally.notVoting = game.currentDay.currentTally.notVoting.filter(p => p !== userId);
             game.save(saveErr => {
               if (saveErr) {
                 console.log('Error capturing vote');
