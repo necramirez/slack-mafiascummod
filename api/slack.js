@@ -1,4 +1,5 @@
 const express = require('express');
+const request = require('request-promise');
 const Game = require('../models/Game');
 
 const router = express.Router();
@@ -28,22 +29,81 @@ router.post('/event', (req, res) => {
   }
 });
 
+const SLASH_COMMANDS = {
+  setup: {
+    short: 'Create a game in the current channel with you as moderator (a.k.a. mod)',
+    usage: 'setup',
+  },
+  begin: {
+    short: '(mod only) Begin a "day" in the current game',
+    usage: 'begin <player list>',
+    example: 'begin @username1 @username2 ...',
+  },
+  vote: {
+    short: 'Create a game in the current channel with you as mod',
+    usage: 'vote <player>',
+    example: 'vote @username1',
+  },
+  end: {
+    short: '(mod only) Force the current "day" to end, even if there is no majority vote yet',
+    usage: 'end',
+  },
+  teardown: {
+    short: '(mod only) Force the current game to end',
+    usage: 'teardown',
+  },
+};
+
+const buildCommandHelp = cmd => `
+\`${SLASH_COMMANDS[cmd].usage}\` - ${SLASH_COMMANDS[cmd].short}. Example: \`${SLASH_COMMANDS[cmd].example}\`
+`;
+
 router.post('/slash', (req, res) => {
   const {
-    body: { channel_id: channelId, command, response_uri: responseUri, text, token, user_id: userId },
+    body: { channel_id: channelId, command, response_url: responseUrl, text = 'help', token, user_id: userId },
   } = req;
   switch (command) {
     case 'mafiascummod':
     default:
       console.log('Handling /mafiascummod...');
-      Game.findOne({ channelId, modUserId: userId, workspaceToken: token }, err => {
+
+      if (text === 'help') {
+        res.send(Object.keys(SLASH_COMMANDS).map(buildCommandHelp).join('\n'));
+        return;
+      }
+
+      const endOfKeywordIndex = text.indexOf(' ');
+
+      const keyword = text.substring(0, endOfKeywordIndex);
+      if (!SLASH_COMMANDS[keyword]) {
+        res.send('Invalid command');
+        return;
+      }
+
+      const value = text.substring(endOfKeywordIndex + 1);
+      if (value.test(/^help[^A-Za-z]/)) {
+        res.send(buildCommandHelp(keyword));
+        return;
+      }
+
+      res.sendStatus(200);
+
+      Game.findOne({ channelId, modUserId: userId, workspaceToken: token }, (err, game) => {
         if (err) {
-          console.log('Game not found');
-          res.sendStatus(400).send('Game not found');
-        } else {
-          console.log(responseUri, text);
-          res.send('OK');
+          console.log('Error loading game');
+          res.sendStatus(400).send('Error loading game');
+          return;
         }
+
+        request({
+          method: 'POST',
+          uri: responseUrl,
+          body: {
+            response_type: 'in_channel',
+            text: 'OK',
+          },
+          json: true,
+        });
       });
   }
 });
