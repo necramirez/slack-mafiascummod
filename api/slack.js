@@ -167,7 +167,6 @@ router.post('/slash', (req, res) => {
 ${tally.votes.map(vote => `[*${renderVotee(vote.votee)}*] (${vote.voters.length}) - ${renderPlayerList(vote.voters)}`)}
 ${tally.notVoting.length > 0 &&
           `
-
 Not voting: ${renderPlayerList(tally.notVoting)}`}
 `;
 
