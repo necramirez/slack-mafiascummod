@@ -167,7 +167,8 @@ router.post('/slash', (req, res) => {
         const votee = parseUserId(payload);
 
         const isInitialTally = game.currentDay.dayId === 1 && game.currentDay.currentTally.votes.length === 0;
-        const lynchThreshold = n => `With ${n} alive, it takes ${Math.ceil(n / 2)} to lynch.`;
+        const majorityVote = n => (n % 2 === 0 ? n / 2 + 1 : Math.ceil(n / 2));
+        const lynchThresholdMessage = n => `With ${n} alive, it takes ${majorityVote(n)} to lynch.`;
         const renderPlayerList = playerList => playerList.map(player => `<@${player}>`).join(', ');
         const renderVotee = v => (v.toLowerCase() === 'no lynch' ? 'No Lynch' : `<@${v}>`);
         const renderTally = tally => `${tally.votes.map(
@@ -269,7 +270,6 @@ ${players.map((player, index) => `${index + 1}. <@${player}>`).join('\n')}
               return;
             }
             // else capture vote
-            // auto-end day on majority vote?
             console.log('Capturing vote...');
             console.log(`Current day is Day ${game.currentDay.dayId}`);
             /* eslint-disable no-param-reassign */
@@ -291,6 +291,14 @@ ${players.map((player, index) => `${index + 1}. <@${player}>`).join('\n')}
               );
             }
             game.currentDay.currentTally.notVoting = game.currentDay.currentTally.notVoting.filter(p => p !== userId);
+            // auto-end day on majority vote
+            if (
+              game.currentDay.currentTally.votes.some(
+                vote => vote.voters.length >= majorityVote(game.currentDay.players.length),
+              )
+            ) {
+              game.currentDay.votingClosed = true;
+            }
             game.save(saveErr => {
               if (saveErr) {
                 console.log('Error capturing vote');
@@ -304,9 +312,19 @@ ${players.map((player, index) => `${index + 1}. <@${player}>`).join('\n')}
                 response_type: 'ephemeral',
                 text: 'Your vote has been counted',
               });
+              if (game.currentDay.votingClosed) {
+                respond({
+                  response_type: 'ephemeral',
+                  text: `A majority vote has been reached for Day ${game.currentDay.dayId}
+
+${renderTally(game.currentDay.currentTally)}
+
+Voting is now closed
+`,
+                });
+              }
             });
             /* eslint-enable */
-            // auto-end day on majority vote?
             break;
           case 'unvote':
             // if voting is closed, error
@@ -382,7 +400,7 @@ ${renderPlayerList(game.currentDay.players)}
                   : renderTally(game.currentDay.currentTally)
               }
 
-_${lynchThreshold(game.currentDay.players.length)}_
+_${lynchThresholdMessage(game.currentDay.players.length)}_
 `,
             });
             break;
@@ -418,7 +436,7 @@ _${lynchThreshold(game.currentDay.players.length)}_
                 text: `
 Day ${game.currentDay.dayId} has been forcefully ended by the mod
 
-Voting is closed
+Voting is now closed
 `,
               });
             });
