@@ -157,12 +157,15 @@ router.post('/slash', (req, res) => {
 
         const rawPlayerTags = payload.split(' ').filter(v => !!v);
         const invalidUsernameFound = !rawPlayerTags.every(v => /<@[\w|]+>/.test(v));
-        const players = rawPlayerTags.map(p => p.replace(/[<@>]/g, '').split('|')[0]);
+        const parseUserId = u => u.replace(/[<@>]/g, '').split('|')[0];
+        const players = rawPlayerTags.map(p => parseUserId(p));
+
+        const votee = parseUserId(payload);
 
         const isInitialTally = game.currentDay.dayId === 1 && game.currentDay.currentTally.votes.length === 0;
         const lynchThreshold = n => `With ${n} alive, it takes ${Math.ceil(n / 2)} to lynch.`;
         const renderPlayerList = playerList => playerList.map(player => `<@${player}>`).join(', ');
-        const renderVotee = votee => (votee.toLowerCase() === 'no lynch' ? 'No Lynch' : `<@${votee}>`);
+        const renderVotee = v => (v.toLowerCase() === 'no lynch' ? 'No Lynch' : `<@${v}>`);
         const renderTally = tally => `${tally.votes.map(
           vote => `[*${renderVotee(vote.votee)}*] (${vote.voters.length}) - ${renderPlayerList(vote.voters)}`,
         )}
@@ -243,9 +246,9 @@ ${players.map((player, index) => `${index + 1}. <@${player}>`).join('\n')}
               return;
             }
             // if votee is not in player list, error
-            if (!game.currentDay.players.includes(payload)) {
+            if (!game.currentDay.players.includes(votee)) {
               console.log('You can only vote for players still part of the game');
-              console.log(`${payload} not in ${game.currentDay.players}`);
+              console.log(`${votee} not in ${game.currentDay.players}`);
               respond({
                 response_type: 'ephemeral',
                 text: 'You can only vote for players still part of the game',
@@ -258,17 +261,17 @@ ${players.map((player, index) => `${index + 1}. <@${player}>`).join('\n')}
             console.log(`Current day is Day ${game.currentDay.dayId}`);
             /* eslint-disable no-param-reassign */
             // votee has no votes yet
-            if (!game.currentDay.currentTally.votes.some(vote => vote.votee === payload)) {
+            if (!game.currentDay.currentTally.votes.some(vote => vote.votee === votee)) {
               game.currentDay.currentTally.votes.push({
-                votee: payload,
+                votee,
                 voters: [userId],
               });
             } else {
               game.currentDay.currentTally.votes = game.currentDay.currentTally.votes.map(
                 vote =>
-                  vote.votee === payload
+                  vote.votee === votee
                     ? {
-                        votee: payload,
+                        votee,
                         voters: vote.voters.concat([userId]),
                       }
                     : vote,
