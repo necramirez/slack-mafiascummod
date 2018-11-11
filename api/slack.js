@@ -40,7 +40,7 @@ const KEYWORDS = {
     example: 'beginDay @username1 @username2 ...',
   },
   vote: {
-    short: 'Vote for a player',
+    short: 'Vote for a player; if your vote results in a majority vote, the day automatically ends',
     usage: 'vote <player>',
     example: 'vote @username1',
   },
