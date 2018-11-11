@@ -102,7 +102,7 @@ router.post('/slash', (req, res) => {
   switch (command) {
     case '/mafiascummod':
     default:
-      console.log(`Handling ${command}...`);
+      console.log(`Handling ${command} with keyword ${keyword}...`);
       res.send('Please wait a moment...');
 
       // get ongoing game
