@@ -163,8 +163,9 @@ router.post('/slash', (req, res) => {
         const lynchThreshold = n => `With ${n} alive, it takes ${Math.ceil(n / 2)} to lynch.`;
         const renderPlayerList = playerList => playerList.map(player => `<@${player}>`).join(', ');
         const renderVotee = votee => (votee.toLowerCase() === 'no lynch' ? 'No Lynch' : `<@${votee}>`);
-        const renderTally = tally => `
-${tally.votes.map(vote => `[*${renderVotee(vote.votee)}*] (${vote.voters.length}) - ${renderPlayerList(vote.voters)}`)}
+        const renderTally = tally => `${tally.votes.map(
+          vote => `[*${renderVotee(vote.votee)}*] (${vote.voters.length}) - ${renderPlayerList(vote.voters)}`,
+        )}
 ${tally.notVoting.length > 0 &&
           `
 Not voting: ${renderPlayerList(tally.notVoting)}`}
@@ -244,6 +245,7 @@ ${players.map((player, index) => `${index + 1}. <@${player}>`).join('\n')}
             // if votee is not in player list, error
             if (!game.currentDay.players.includes(payload)) {
               console.log('You can only vote for players still part of the game');
+              console.log(`${payload} not in ${game.currentDay.players}`);
               respond({
                 response_type: 'ephemeral',
                 text: 'You can only vote for players still part of the game',
@@ -304,7 +306,6 @@ ${players.map((player, index) => `${index + 1}. <@${player}>`).join('\n')}
               response_type: 'in_channel',
               text: `
 Day ${game.currentDay.dayId}
-
 ${
                 isInitialTally
                   ? `*Alive:*
