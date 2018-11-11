@@ -54,18 +54,20 @@ const SLASH_COMMANDS = {
   },
 };
 
-const buildCommandHelp = cmd => `
-\`${SLASH_COMMANDS[cmd].usage}\` - ${SLASH_COMMANDS[cmd].short}. Example: \`${SLASH_COMMANDS[cmd].example}\`
-`;
-
 router.post('/slash', (req, res) => {
   const {
     body: { channel_id: channelId, command, response_url: responseUrl, text = 'help', token, user_id: userId },
   } = req;
+  const buildCommandHelp = cmd => {
+    const example = SLASH_COMMANDS[cmd].example ? ` Example: \`/${command} ${SLASH_COMMANDS[cmd].example}\`` : '';
+    return `\`${SLASH_COMMANDS[cmd].usage}\` - ${SLASH_COMMANDS[cmd].short}.${example}`;
+  };
+
   switch (command) {
     case 'mafiascummod':
     default:
       console.log('Handling /mafiascummod...');
+      console.log(req.body.text);
 
       if (text === 'help') {
         res.send(Object.keys(SLASH_COMMANDS).map(buildCommandHelp).join('\n'));
