@@ -156,13 +156,16 @@ router.post('/slash', (req, res) => {
         };
 
         const rawPlayerTags = payload.split(' ').filter(v => !!v);
+        const invalidUsernameFound = !rawPlayerTags.every(v => /<@\w+>/.test(v));
         const players = rawPlayerTags.map(p => p.replace(/[<@>]/, ''));
 
         console.log(`Handling keyword ${keyword}...`);
         switch (keyword) {
           case 'begin':
-            if (!rawPlayerTags.every(v => /<@\w+>/.test(v))) {
+            if (invalidUsernameFound) {
               console.log('Invalid username found');
+              console.log(rawPlayerTags);
+              console.log(players);
               respond({
                 response_type: 'ephemeral',
                 text: 'Invalid username found',
