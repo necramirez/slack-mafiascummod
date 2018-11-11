@@ -159,6 +159,18 @@ router.post('/slash', (req, res) => {
         const invalidUsernameFound = !rawPlayerTags.every(v => /<@[\w|]+>/.test(v));
         const players = rawPlayerTags.map(p => p.replace(/[<@>]/g, '').split('|')[0]);
 
+        const isInitialTally = game.currentDay.dayId === 1 && game.currentDay.currentTally.votes.length === 0;
+        const lynchThreshold = n => `With ${n} alive, it takes ${Math.ceil(n / 2)} to lynch.`;
+        const renderPlayerList = playerList => playerList.map(player => `<@${player}>`).join(', ');
+        const renderVotee = votee => (votee.toLowerCase() === 'no lynch' ? 'No Lynch' : `<@${votee}>`);
+        const renderTally = tally => `
+${tally.votes.map(vote => `[*${renderVotee(vote.votee)}*] (${vote.voters.length}) - ${renderPlayerList(vote.voters)}`)}
+${tally.notVoting.length > 0 &&
+          `
+
+Not voting: ${renderPlayerList(tally.notVoting)}`}
+`;
+
         console.log(`Handling keyword ${keyword}...`);
         switch (keyword) {
           case 'beginDay':
@@ -226,7 +238,32 @@ ${players.map((player, index) => `${index + 1}. <@${player}>`).join('\n')}
             // auto-end day on majority vote?
             break;
           case 'tally':
-            // else show tally
+            if (game.currentDay === null) {
+              console.log('Cannot show tally - Game has not yet begun');
+              respond({
+                response_type: 'ephemeral',
+                text: `Game has not yet begun`,
+              });
+              return;
+            }
+            console.log('Generating tally...');
+            console.log(`Current day is Day ${game.currentDay.dayId}`);
+            respond({
+              response_type: 'in_channel',
+              text: `
+Day ${game.currentDay.dayId}
+
+${
+                isInitialTally
+                  ? `*Alive:*
+${renderPlayerList(game.currentDay.players)}
+`
+                  : renderTally(game.currentDay.currentTally)
+              }
+
+_${lynchThreshold(game.currentDay.players.length)}_
+`,
+            });
             break;
           case 'forceDayEnd':
             if (game.currentDay === null || game.currentDay.votingClosed) {
