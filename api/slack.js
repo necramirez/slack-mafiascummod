@@ -34,10 +34,10 @@ const KEYWORDS = {
     short: 'Create a game in the current channel with you as moderator (a.k.a. mod)',
     usage: 'setup',
   },
-  begin: {
+  beginDay: {
     short: '(mod only) Begin a "day" in the current game',
-    usage: 'begin <player list>',
-    example: 'begin @username1 @username2 ...',
+    usage: 'beginDay <player list>',
+    example: 'beginDay @username1 @username2 ...',
   },
   vote: {
     short: 'Create a game in the current channel with you as mod',
@@ -48,9 +48,9 @@ const KEYWORDS = {
     short: 'Show current vote tally',
     usage: 'tally',
   },
-  end: {
+  forceDayEnd: {
     short: '(mod only) Force the current "day" to end, even if there is no majority vote yet',
-    usage: 'end',
+    usage: 'forceDayEnd',
   },
   teardown: {
     short: '(mod only) Force the current game to end',
@@ -161,7 +161,7 @@ router.post('/slash', (req, res) => {
 
         console.log(`Handling keyword ${keyword}...`);
         switch (keyword) {
-          case 'begin':
+          case 'beginDay':
             if (invalidUsernameFound) {
               console.log('Invalid username found');
               console.log(rawPlayerTags);
@@ -228,7 +228,7 @@ ${players.map((player, index) => `${index + 1}. <@${player}>`).join('\n')}
           case 'tally':
             // else show tally
             break;
-          case 'end':
+          case 'forceDayEnd':
             if (game.currentDay === null || game.currentDay.votingClosed) {
               console.log('Cannot end the day - Day has not yet begun');
               respond({
@@ -275,7 +275,7 @@ Voting is closed
             // else end game
             console.log('Ending the game...');
             /* eslint-disable no-param-reassign */
-            game.endedAt = new Date();
+            game.endedAt = new Date().toISOString();
             game.save(saveErr => {
               if (saveErr) {
                 console.log('Error ending the game');
