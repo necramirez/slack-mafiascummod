@@ -1,0 +1,22 @@
+version: '3'
+services:
+
+  mongo:
+    image: mongo
+    ports:
+      - "27017:27017"
+    command: "--smallfiles --logpath=/dev/null"
+
+  web:
+    build: .
+    depends_on:
+      - mongo
+    env_file: .env
+    environment:
+      MONGODB_URI: mongodb://mongo:27017/mafiascummod
+    command: "npm run start:dev"
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - ./node_modules:/usr/app/node_modules
