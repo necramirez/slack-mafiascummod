@@ -242,7 +242,7 @@ ${players.map((player, index) => `${index + 1}. <@${player}>`).join('\n')}
               return;
             }
             // if votee is not in player list, error
-            if (!game.currentDay.players.include(payload)) {
+            if (!game.currentDay.players.includes(payload)) {
               console.log('You can only vote for players still part of the game');
               respond({
                 response_type: 'ephemeral',
