@@ -40,9 +40,13 @@ const KEYWORDS = {
     example: 'beginDay @username1 @username2 ...',
   },
   vote: {
-    short: 'Create a game in the current channel with you as mod',
+    short: 'Vote for a player',
     usage: 'vote <player>',
     example: 'vote @username1',
+  },
+  unvote: {
+    short: 'Remove your current vote',
+    usage: 'unvote',
   },
   tally: {
     short: 'Show current vote tally',
@@ -303,6 +307,57 @@ ${players.map((player, index) => `${index + 1}. <@${player}>`).join('\n')}
             });
             /* eslint-enable */
             // auto-end day on majority vote?
+            break;
+          case 'unvote':
+            // if voting is closed, error
+            if (game.currentDay === null || game.currentDay.votingClosed) {
+              console.log('Cannot unvote - Day has not yet begun');
+              respond({
+                response_type: 'ephemeral',
+                text: `Day has not yet begun`,
+              });
+              return;
+            }
+            // if unvoter has not voted yet, error
+            if (game.currentDay.currentTally.notVoting.includes(userId)) {
+              console.log('You have not voted yet');
+              respond({
+                response_type: 'ephemeral',
+                text: 'You have not voted yet',
+              });
+              return;
+            }
+            // else register unvote
+            console.log('Registering unvote...');
+            console.log(`Current day is Day ${game.currentDay.dayId}`);
+            /* eslint-disable no-param-reassign */
+            game.currentDay.currentTally.votes = game.currentDay.currentTally.votes
+              .map(
+                vote =>
+                  vote.voters.includes(userId)
+                    ? {
+                        votee,
+                        voters: vote.voters.filter(v => v !== userId),
+                      }
+                    : vote,
+              )
+              .filter(vote => vote.voters.length > 0);
+            game.currentDay.currentTally.notVoting.push(userId);
+            game.save(saveErr => {
+              if (saveErr) {
+                console.log('Error registering unvote');
+                respond({
+                  response_type: 'ephemeral',
+                  text: 'Error registering unvote',
+                });
+                return;
+              }
+              respond({
+                response_type: 'ephemeral',
+                text: 'Your vote has been removed',
+              });
+            });
+            /* eslint-enable */
             break;
           case 'tally':
             if (game.currentDay === null) {
