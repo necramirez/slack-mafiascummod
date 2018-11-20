@@ -165,7 +165,7 @@ router.post('/slash', (req, res) => {
         };
 
         const rawPlayerTags = payload.split(' ').filter(v => !!v);
-        const invalidUsernameFound = !rawPlayerTags.every(v => /<@[\w|]+>/.test(v));
+        const invalidUsernameFound = !rawPlayerTags.every(v => /<@.+>/.test(v));
         const parseUserId = u => u.replace(/[<@>]/g, '').split('|')[0];
         const players = rawPlayerTags.map(p => parseUserId(p));
 
