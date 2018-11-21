@@ -408,6 +408,10 @@ ${renderPlayerList(game.currentDay.players)}
 _${lynchThresholdMessage(game.currentDay.players.length)}_
 `,
             });
+            /* eslint-disable no-param-reassign */
+            game.lastTallyRequestedAt = new Date().toISOString();
+            game.save();
+            /* eslint-enable */
             break;
           case 'endWithDraw':
             if (game.currentDay === null || game.currentDay.votingClosed) {
