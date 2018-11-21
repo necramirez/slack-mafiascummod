@@ -176,9 +176,9 @@ router.post('/slash', (req, res) => {
         const lynchThresholdMessage = n => `With ${n} alive, it takes ${majorityVote(n)} to lynch.`;
         const renderPlayerList = playerList => playerList.map(player => `<@${player}>`).join(', ');
         const renderVotee = v => (v.toLowerCase() === 'no lynch' ? 'No Lynch' : `<@${v}>`);
-        const renderTally = tally => `${tally.votes.map(
-          vote => `[*${renderVotee(vote.votee)}*] (${vote.voters.length}) - ${renderPlayerList(vote.voters)}`,
-        )}
+        const renderTally = tally => `${tally.votes
+          .map(vote => `[*${renderVotee(vote.votee)}*] (${vote.voters.length}) - ${renderPlayerList(vote.voters)}`)
+          .join('\n')}
 ${tally.notVoting.length > 0 &&
           `
 Not voting: ${renderPlayerList(tally.notVoting)}`}
