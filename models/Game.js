@@ -1,45 +1,54 @@
 const { connection: db, Schema } = require('../services/mongoose');
 
-const TallyEntry = new Schema({
-  votee: {
-    type: String,
-    required: true,
+const TallyEntry = new Schema(
+  {
+    votee: {
+      type: String,
+      required: true,
+    },
+    voters: {
+      type: [String],
+      default: [],
+    },
   },
-  voters: {
-    type: [String],
-    default: [],
-  },
-});
+  { _id: false },
+);
 
-const Tally = new Schema({
-  votes: {
-    type: [TallyEntry],
-    default: [],
+const Tally = new Schema(
+  {
+    votes: {
+      type: [TallyEntry],
+      default: [],
+    },
+    notVoting: {
+      type: [String],
+      default: [],
+    },
   },
-  notVoting: {
-    type: [String],
-    default: [],
-  },
-});
+  { _id: false },
+);
 
-const Day = new Schema({
-  dayId: {
-    type: Number,
-    required: true,
+const Day = new Schema(
+  {
+    dayId: {
+      type: Number,
+      required: true,
+    },
+    players: {
+      type: [String],
+      default: [],
+    },
+    currentTally: {
+      type: Tally,
+      default: null,
+    },
+    votingClosed: {
+      type: Boolean,
+      default: false,
+    },
   },
-  players: {
-    type: [String],
-    default: [],
-  },
-  currentTally: {
-    type: Tally,
-    default: null,
-  },
-  votingClosed: {
-    type: Boolean,
-    default: false,
-  },
-});
+  { _id: false },
+);
 
 const GameSchema = new Schema(
   {
