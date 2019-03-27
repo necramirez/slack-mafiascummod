@@ -1,6 +1,7 @@
 const express = require('express');
 const request = require('request-promise');
 const Game = require('../models/Game');
+const { postMessage } = require('../services/slack');
 
 const router = express.Router();
 
@@ -316,6 +317,11 @@ ${players.map((player, index) => `${index + 1}. <@${player}>`).join('\n')}
               respond({
                 response_type: 'ephemeral',
                 text: 'Your vote has been counted',
+              });
+              postMessage({
+                asUser: true,
+                channel: channelId,
+                text: `*VOTE:* <@${votee}>`,
               });
               if (game.currentDay.votingClosed) {
                 respond({
