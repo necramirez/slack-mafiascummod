@@ -376,8 +376,8 @@ Voting is now closed
                 return;
               }
               respond({
-                response_type: 'ephemeral',
-                text: 'Your vote has been removed',
+                response_type: 'in_channel',
+                text: `<@${userId}> unvoted`,
               });
             });
             /* eslint-enable */
