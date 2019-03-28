@@ -211,8 +211,8 @@ Not voting: ${renderPlayerList(tally.notVoting)}`}
           d && d.isValid
             ? `
 *DEADLINE*:
-_${d.setZone('Asia/Singapore').toFormat(DateTime.DATETIME_HUGE)}_
-_${d.setZone('America/New_York').toFormat(DateTime.DATETIME_HUGE)}_
+_${d.setZone('Asia/Singapore').toLocaleString(DateTime.DATETIME_HUGE)}_
+_${d.setZone('America/New_York').toLocaleString(DateTime.DATETIME_HUGE)}_
 `
             : '';
 
@@ -488,7 +488,7 @@ ${
               }
               respond({
                 response_type: 'ephemeral',
-                text: `Deadline successfully set to ${deadline.toFormat(DateTime.DATETIME_HUGE)}`,
+                text: `Deadline successfully set to ${deadline.toLocaleString(DateTime.DATETIME_HUGE)}`,
               });
             });
             /* eslint-enable */
