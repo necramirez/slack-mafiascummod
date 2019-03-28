@@ -316,7 +316,7 @@ ${players.map((player, index) => `${index + 1}. <@${player}>`).join('\n')}
               }
               respond({
                 response_type: 'in_channel',
-                text: `<@${userId}> voted for <@${votee}>`,
+                text: isVoteeNoLynch ? `<@${userId}> voted for No Lynch` : `<@${userId}> voted for <@${votee}>`,
               });
               if (game.currentDay.votingClosed) {
                 respond({
