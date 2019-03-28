@@ -46,6 +46,10 @@ const Day = new Schema(
       type: Boolean,
       default: false,
     },
+    votingDeadline: {
+      type: Date,
+      default: false,
+    },
   },
   { _id: false },
 );

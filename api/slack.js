@@ -1,4 +1,5 @@
 const express = require('express');
+const { DateTime } = require('luxon');
 const request = require('request-promise');
 const Game = require('../models/Game');
 
@@ -51,6 +52,15 @@ const KEYWORDS = {
   tally: {
     short: 'Show current vote tally',
     usage: 'tally',
+  },
+  setDeadline: {
+    short: '(mod only) Set voting deadline for current "day"',
+    usage: 'setDeadline <ISO 8601 datetime>',
+    example: 'setDeadline 2019-04-01T13:00:00+0800',
+  },
+  unsetDeadline: {
+    short: '(mod only) Remove voting deadline for current "day"',
+    usage: 'unsetDeadline',
   },
   endWithDraw: {
     short:
@@ -184,6 +194,15 @@ ${tally.notVoting.length > 0 &&
           `
 Not voting: ${renderPlayerList(tally.notVoting)}`}
 `;
+        const deadline = DateTime.fromISO(payload);
+        const renderDeadline = d =>
+          d && d.isValid
+            ? `
+*DEADLINE*:
+_${d.setZone('Asia/Singapore').toFormat(DateTime.DATETIME_HUGE)}_
+_${d.setZone('America/New_York').toFormat(DateTime.DATETIME_HUGE)}_
+`
+            : '';
 
         console.log(`Handling keyword ${keyword}...`);
         switch (keyword) {
@@ -304,6 +323,7 @@ ${players.map((player, index) => `${index + 1}. <@${player}>`).join('\n')}
               )
             ) {
               game.currentDay.votingClosed = true;
+              game.currentDay.votingDeadline = null;
             }
             game.save(saveErr => {
               if (saveErr) {
@@ -405,13 +425,95 @@ ${renderPlayerList(game.currentDay.players)}
 `
                   : renderTally(game.currentDay.currentTally)
               }
-
 _${lynchThresholdMessage(game.currentDay.players.length)}_
+${
+                game.currentDay.votingClosed || !game.currentDay.votingDeadline
+                  ? ''
+                  : renderDeadline(DateTime.fromJSDate(game.currentDay.votingDeadline))
+              }
 `,
             });
             /* eslint-disable no-param-reassign */
             game.lastTallyRequestedAt = new Date().toISOString();
             game.save();
+            /* eslint-enable */
+            break;
+          case 'setDeadline':
+            if (game.currentDay === null || game.currentDay.votingClosed) {
+              console.log('Cannot set deadline - Day has not yet begun');
+              respond({
+                response_type: 'ephemeral',
+                text: `Day has not yet begun`,
+              });
+              return;
+            }
+            // if you are not the mod, error
+            if (notMod) {
+              notModResponse();
+              return;
+            }
+            // else set deadline
+            console.log('Setting deadline...');
+            console.log(`Current day is Day ${game.currentDay.dayId}`);
+            /* eslint-disable no-param-reassign */
+            if (!deadline.isValid) {
+              console.log(`Cannot set deadline - ${deadline.invalidReason}`, deadline.invalidExplanation);
+              respond({
+                response_type: 'ephemeral',
+                text: `Cannot set deadline - ${deadline.invalidReason}`,
+              });
+              return;
+            }
+            game.currentDay.votingDeadline = deadline.toUTC().toJSDate();
+            game.save(saveErr => {
+              if (saveErr) {
+                console.log('Error setting deadline');
+                respond({
+                  response_type: 'ephemeral',
+                  text: 'Error setting deadline',
+                });
+                return;
+              }
+              respond({
+                response_type: 'ephemeral',
+                text: `Deadline successfully set to ${deadline.toFormat(DateTime.DATETIME_HUGE)}`,
+              });
+            });
+            /* eslint-enable */
+            break;
+          case 'unsetDeadline':
+            if (game.currentDay === null || game.currentDay.votingClosed) {
+              console.log('Cannot unset deadline - Day has not yet begun');
+              respond({
+                response_type: 'ephemeral',
+                text: `Day has not yet begun`,
+              });
+              return;
+            }
+            // if you are not the mod, error
+            if (notMod) {
+              notModResponse();
+              return;
+            }
+            // else unset deadline
+            console.log('Unsetting deadline...');
+            console.log(`Current day is Day ${game.currentDay.dayId}`);
+            /* eslint-disable no-param-reassign */
+            game.currentDay.votingDeadline = null;
+            game.save(saveErr => {
+              if (saveErr) {
+                console.log('Error unsetting deadline');
+                respond({
+                  response_type: 'ephemeral',
+                  text: 'Error unsetting deadline',
+                });
+                return;
+              }
+              respond({
+                response_type: 'ephemeral',
+                text: `Deadline successfully unset`,
+              });
+            });
             /* eslint-enable */
             break;
           case 'endWithDraw':
@@ -433,6 +535,7 @@ _${lynchThresholdMessage(game.currentDay.players.length)}_
             console.log(`Current day is Day ${game.currentDay.dayId}`);
             /* eslint-disable no-param-reassign */
             game.currentDay.votingClosed = true;
+            game.currentDay.votingDeadline = null;
             game.save(saveErr => {
               if (saveErr) {
                 console.log('Error ending the day with a draw');
@@ -472,6 +575,7 @@ Voting is now closed
             console.log(`Current day is Day ${game.currentDay.dayId}`);
             /* eslint-disable no-param-reassign */
             game.currentDay.votingClosed = true;
+            game.currentDay.votingDeadline = null;
             game.save(saveErr => {
               if (saveErr) {
                 console.log('Error force ending the day');
