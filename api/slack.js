@@ -165,6 +165,18 @@ router.post('/slash', (req, res) => {
           return;
         }
 
+        console.log(`Processing request for game channel ${game.channelId}:
+Started at: ${game.startedAt}
+Current day: ${game.currentDay ? game.currentDay.dayId : '(none)'}
+${
+          game.currentDay
+            ? `Can vote? ${game.currentDay.votingClosed}
+Voting deadline: ${game.currentDay.votingDeadline}
+`
+            : ''
+        }
+`);
+
         const notMod = game.modUserId !== userId;
         const notModResponse = () => {
           console.log('Not the mod');
