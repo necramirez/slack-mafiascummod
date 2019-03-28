@@ -169,7 +169,8 @@ router.post('/slash', (req, res) => {
         const parseUserId = u => u.replace(/[<@>]/g, '').split('|')[0];
         const players = rawPlayerTags.map(p => parseUserId(p));
 
-        const votee = parseUserId(payload);
+        const isVoteeNoLynch = payload.toLowerCase() === 'no lynch';
+        const votee = isVoteeNoLynch ? 'no lynch' : parseUserId(payload);
 
         const isInitialTally = day => day.dayId === 1 && day.currentTally.votes.length === 0;
         const majorityVote = n => (n % 2 === 0 ? n / 2 + 1 : Math.ceil(n / 2));
@@ -256,7 +257,7 @@ ${players.map((player, index) => `${index + 1}. <@${player}>`).join('\n')}
               return;
             }
             // if votee is not in player list, error
-            if (!game.currentDay.players.includes(votee)) {
+            if (!game.currentDay.players.includes(votee) && !isVoteeNoLynch) {
               console.log('You can only vote for players still part of the game');
               console.log(`${votee} not in ${game.currentDay.players}`);
               respond({
