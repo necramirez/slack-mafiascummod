@@ -287,6 +287,16 @@ ${players.map((player, index) => `${index + 1}. <@${player}>`).join('\n')}
               });
               return;
             }
+            // if voter is not in player list, error
+            if (!game.currentDay.players.includes(userId)) {
+              console.log('You can only vote if you are part of the game');
+              console.log(`${userId} not in ${game.currentDay.players}`);
+              respond({
+                response_type: 'ephemeral',
+                text: 'You can only vote if you are part of the game',
+              });
+              return;
+            }
             // if votee is not in player list, error
             if (!game.currentDay.players.includes(votee) && !isVoteeNoLynch) {
               console.log('You can only vote for players still part of the game');
@@ -371,6 +381,16 @@ Voting is now closed
               respond({
                 response_type: 'ephemeral',
                 text: `Day has not yet begun`,
+              });
+              return;
+            }
+            // if unvoter is not in player list, error
+            if (!game.currentDay.players.includes(userId)) {
+              console.log('You can only unvote if you are part of the game');
+              console.log(`${userId} not in ${game.currentDay.players}`);
+              respond({
+                response_type: 'ephemeral',
+                text: 'You can only unvote if you are part of the game',
               });
               return;
             }
