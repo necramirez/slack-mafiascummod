@@ -193,6 +193,8 @@ Voting deadline: ${game.currentDay.votingDeadline}
 
         const isVoteeNoLynch = payload.toLowerCase() === 'no lynch';
         const votee = isVoteeNoLynch ? 'no lynch' : parseUserId(payload);
+        const votingMessage = isVoteeNoLynch ? `<@${userId}> voted for No Lynch` : `<@${userId}> voted for <@${votee}>`;
+        const votingResult = isVoteeNoLynch ? '*THIS IS A NO LYNCH.*' : '*THIS IS A LYNCH.*';
 
         const isInitialTally = day => day.dayId === 1 && day.currentTally.votes.length === 0;
         const majorityVote = n => (n % 2 === 0 ? n / 2 + 1 : Math.ceil(n / 2));
@@ -356,19 +358,26 @@ ${players.map((player, index) => `${index + 1}. <@${player}>`).join('\n')}
                 });
                 return;
               }
-              respond({
-                response_type: 'in_channel',
-                text: isVoteeNoLynch ? `<@${userId}> voted for No Lynch` : `<@${userId}> voted for <@${votee}>`,
-              });
               if (game.currentDay.votingClosed) {
                 respond({
-                  response_type: 'ephemeral',
-                  text: `A majority vote has been reached for Day ${game.currentDay.dayId}
+                  response_type: 'in_channel',
+                  text: `${votingMessage}
+
+A majority vote has been reached for Day ${game.currentDay.dayId}
 
 ${renderTally(game.currentDay.currentTally)}
 
-Voting is now closed
+${votingResult}
+
+Voting is now closed.
+
+_You may still discuss until the moderator posts the day's closing scene._
 `,
+                });
+              } else {
+                respond({
+                  response_type: 'in_channel',
+                  text: votingMessage,
                 });
               }
             });
